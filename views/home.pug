@@ -1,0 +1,42 @@
+doctype html
+html(lang="en")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    title Bootstrap Sample Website
+    link(rel="stylesheet", href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css")
+    style
+      | body {
+      |   padding-top: 56px;
+      | }
+  body
+    // Navigation Bar
+    nav.navbar.navbar-expand-lg.navbar-light.bg-light.fixed-top
+      a.navbar-brand(href="#") My Website
+      button.navbar-toggler(type="button", data-toggle="collapse", data-target="#navbarNav", aria-controls="navbarNav", aria-expanded="false", aria-label="Toggle navigation")
+        span.navbar-toggler-icon
+      .collapse.navbar-collapse#navbarNav
+        ul.navbar-nav.ml-auto
+          li.nav-item.active
+            a.nav-link(href="#") Home
+          li.nav-item
+            a.nav-link(href="#") About
+          li.nav-item
+            a.nav-link(href="#") Contact
+
+    // Page Content
+    .container.mt-5
+      h1.mb-4 Welcome to My Website
+
+      .row
+        .col-md-6
+          h2 Section 1
+          p This is the first section of my website. You can add your content here.
+        .col-md-6
+          h2 Section 2
+          p This is the second section of my website. You can add your content here.
+
+    // Bootstrap JS and dependencies
+    script(src="https://code.jquery.com/jquery-3.3.1.slim.min.js")
+    script(src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js")
+    script(src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js")

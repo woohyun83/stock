@@ -1,0 +1,936 @@
+{% extends "template-default.twig" %}
+
+{% import '_form.twig' as _form %}
+{% import '_macro.twig' as _macro %}
+
+{% block title %}Web Monitoring : {{ parent() }}{% endblock %}
+
+{% block body_prop %}id="web-monitoring" {{ parent() }}{% endblock %}
+{% block css %}
+    <link href="/static/css/template.min.css?v={{ static_v }}" rel="stylesheet">
+    <link href="/static/vendor/fontawesome-5.12.1/css/fontawesome.min.css?v={{ static_v }}" rel="stylesheet">
+    <link href="/static/vendor/fontawesome-5.12.1/css/all.min.css?v={{ static_v }}" rel="stylesheet">
+    {{ doc.style | raw }}
+   <style>
+        #content{
+            padding-top: 100px;
+        }
+        @media screen and (max-width:1450px){
+            div .col-2, .col-5 {
+                display: block;
+            }
+        }
+        @media (max-width:768px){
+            .row {
+                display: block;
+                overflow:scroll;
+            }
+            .col-2,.col-6,.col-10 {
+                max-width: 100vw;
+                flex: 0 0 100%;
+                word-wrap: break-word;
+            }
+            #content-table {
+                position: relative !important;
+                width: 100vw !important;
+                max-width: 100vw !important;
+                flex: auto !important;
+            }
+        }
+        @media (max-width:621px){
+            #rt-clock{
+                display: none;
+            }
+            #left-btn-group{
+                margin-left:auto;
+            }
+            .show-scroll {
+                height: unset !important;
+                margin-left: unset !important;
+            }
+            .modal-dialog {
+                min-width: 100% !important;
+                margin:0;
+            }
+        }
+        @media (max-width:500px){
+            #vrcode, #issue-vrcode {
+                width:45.1% !important;
+            }
+            #add-vr, #edit-vr {
+                font-size:12px !important;
+            }
+            #add-vr button,#add-vr input,#add-vr select,#add-vr div,#edit-vr button,#edit-vr input,#edit-vr select,#edit-vr table th,#edit-vr table td{
+                font-size:12px !important;
+            }
+        }
+        @media (max-width:380px){
+            #rt-clock{
+                display: none;
+            }
+        }
+        .sidetab {
+            height: 100%;
+            width: 0;
+            position: fixed;
+            z-index: 1050;
+            top: 0;
+            left: 0;
+            background-color: white;
+            overflow-x: hidden;
+        }
+
+        .show-tab {
+            padding: 17px;
+            border-right: 0.5px solid #e9ecef; 
+        }
+
+        .sidetab a:hover {
+            color: #f1f1f1;
+        }
+
+        .tab-header {
+            border-bottom: 0.5px solid #e9ecef;
+        }
+
+        .sidetab .closebtn {
+            position: absolute;
+            top: 21px;
+            right: 17px;
+            color: black;
+        }
+
+        .sidetab .closebtn:hover {
+            color: red;
+            text-decoration: none;
+        }
+
+        .table-head-fixed thead th{
+            background-color:white;
+            position: sticky;
+            top: -1px;
+            z-index:10;
+        }
+
+        .table-head-fixed th{
+            z-index:10;
+        }
+
+        #newvr td{
+            background-color:#c4c4c4;
+            position: sticky;
+            top: 27px;
+        }
+
+        .custom-control-label:after, .custom-control-label:before{
+            top:1px;
+        }
+
+        .top2:after, .top2:before{
+            top:2px;
+        }
+
+        .custom-control{
+            min-height:0.5rem;
+            display:inline-block;
+        }
+
+        .text-hover:hover{
+            color:#262626 !important;
+        }
+
+        @media screen and (max-height: 450px) {
+            .sidetab {padding-top: 15px;}
+            .sidetab a {font-size: 18px;}
+        }
+        #vr-info th {
+            background-color:whitesmoke;
+        }
+        dialog{
+            margin:0;
+            padding:0;
+            max-width:100%;
+            max-height:100%;
+        }
+        /* .wm-room{
+            box-sizing: border-box;
+        } */
+    </style>
+{% endblock %}
+{% block breadcrumb %}
+    {{ _macro.breadcrumb(
+        ['Home', '/'],
+        ['Web Monitoring']
+    ) }}
+{% endblock %}
+
+{% block content %}
+{# Manage VR Side Tab #}
+<div id="add-vr-side-tab" class="sidetab">
+    <div class="tab-header pt-1 pb-1">
+        <h5 class="tab-title">Manage VR&ensp;<a class="refreshbtn" onclick="edit_vrs(curr_order)"><i class="fa fa-sync-alt"></i></a></h5>
+        <a href="javascript:void(0)" class="closebtn" onclick="closeTab()"><h5><i class="fa fa-times"></i></h5></a>
+    </div>
+    <div class="tab-body pt-2" style="font-size:12px;">
+        <form id="form-add-vr" class="row" style="margin:0">
+            <select class='form-control mr-1 mb-1' id="groupfilter" onchange="filter_group(this.value)" style='font-size:12px;height:30px;padding:0;width:100px;display:inline-block;'>
+                <option value="all" selected>Group</option>
+                {% for group in groups %}
+                <option value="{{group}}">{{group}}</option>
+                {% endfor %}
+                <option value="Unspecified">Unspecified</option>
+            </select>
+            {# <input type="text" class="form-control d-inline-block mr-1" id="vrname" placeholder="VR Name" style="font-size:12px;height:30px;width:100px;"> #}
+            <input type="text" class="form-control d-inline-block ml-auto mr-1" id="vrcode" placeholder="VR Code" onkeypress="press(this.form)" style="font-size:12px;height:30px;width:100px;">
+            <button type="submit" class="btn btn-sm btn-primary" style="font-size:12px;height:30px;width:62px;display:inline-block;padding:.25rem;">Register</button>
+        </form>
+        <div class="row" style="margin:0">
+            <select class='form-control mr-1' id='vrfilter' onchange='filter_vrs(this.value)' style='font-size:12px;height:30px;padding:0;width:100px;display:inline-block;'>
+                <option value="get_myvrs">My VR</option>
+                <option value="get_sharedvrs">Shared VR</option>
+            </select>
+            <button id="toggle-info" type="button" class="btn btn-light btn-sm mr-1" style="height:30px;font-size:12px;" onclick="toggle_viewers()">
+                <i class="fas fa-eye" aria-hidden="true"></i> More Info
+            </button>
+            <div id="vr_menu" class="dropdown ml-auto">
+                <button class="btn btn-light btn-sm dropdown-toggle" type="button" id="actionMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="height:30px;font-size:12px">
+                    Actions
+                </button>
+                <div class="dropdown-menu" aria-labelledby="actionMenuButton" style="font-size:12px">
+                    <a id="btn-edit-group" class="dropdown-item disabled" onclick="change_group()">Change Group</a>
+                    <a id="btn-share" class="dropdown-item disabled" onclick="add_viewer()">Change Permission</a>
+                    <a id="btn-edit-filt" class="dropdown-item disabled" onclick="set_filter()">Filter Settings</a>
+                    <a id="btn-del-vrs" class="dropdown-item disabled" onclick="del_beds()">Delete VR</a>
+                </div>
+            </div>
+        </div>
+        <div class="show-scroll mt-1 mb-2" style="max-height: calc(100vh - 137px);overflow-y:scroll;overflow-x:hidden;position:relative">
+            <table id="vr-info" class="table table-sm table-valign-middle table-align-center table-head-fixed" style="margin-bottom:0;table-layout:fixed;">
+                <thead>
+                    <tr>
+                        <th style="width:30%;text-align:left;">
+                            <div class='custom-control custom-checkbox' style='margin-top: -1px;'><input type='checkbox' class='custom-control-input' id='sel-all-bed' onchange='select_all_beds2()'><label class='custom-control-label' for='sel-all-bed'></label></div>
+                            <a onclick="edit_vrs('bedname', null, true)" onmouseover="show_sort('vrcode')" onmouseout="hide_sort('sort_vrcode')">Name 
+                            <i id="sort_vrcode" class="fas fa-sort"></i></a>
+                        </th>
+                        <th style="width:28%">VR Code</th>
+                        <th style="text-align:right"></th>
+                    </tr>
+                </thead>
+                <tbody id="vrs">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{# Group Filter Side Tab #}
+<div id="group-filter-side-tab" class="sidetab">
+    <div class="tab-header pt-1 pb-1">
+        <h5 class="tab-title">Group</h5>
+        <a href="javascript:void(0)" class="closebtn" onclick="closeGFTab()"><h5><i class="fa fa-times"></i></h5></a>
+    </div>
+    <div class="tab-body pt-2" style="font-size:12px;">
+        <input type="text" class="form-control align-middle d-inline-block mr-1 mb-1" id="filter-bed" oninput="filter_bed(this.value)" style="font-size:12px;height:30px;">
+        <div class="dropdown-divider" style="margin: .25rem 0;"></div>
+        <a class="dropdown-item" onclick="event.stopPropagation()" style="padding:0.15rem 1rem">
+            <div class="custom-control custom-checkbox" style="width:100%;">
+                <input type="checkbox" class="custom-control-input" id="sel-all-group" onchange="wm_selAllGroup()">
+                <label class="custom-control-label" for="sel-all-group">All</label>
+            </div>
+        </a>
+        {% if groups|length > 0 %}
+        <div class="dropdown-divider" style="margin: .2rem 0;"></div>
+        {% for group in groups %}
+        <a class="dropdown-item" onclick="event.stopPropagation()" onmouseover="show_edit('btn-{{group}}')" onmouseout="hide_edit('btn-{{group}}')" style="padding:0.15rem 1rem">
+            <div class="custom-control custom-checkbox" style="width:80%;height:20px">
+                <input type="checkbox" onchange="wm_selGroup(this)" class="custom-control-input" id="{{group}}">
+                <label class="custom-control-label top2" for="{{group}}" style="vertical-align:sub;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{group}}</label>
+            </div>
+            <button type="button" id="btn-{{group}}" onclick="edit_group('{{group}}')" class="btn btn-light btn-sm" style="display:none;padding:0 3px;font-size:12px;float:right"><i class="fa fa-sm fa-pencil-alt" aria-hidden="true"></i></button>
+        </a>
+        {% endfor %}
+        <a class="dropdown-item group-Unspecified" onclick="event.stopPropagation()" style="padding:0.15rem 1rem">
+            <div class="custom-control custom-checkbox" style="width:80%;height:20px">
+                <input type="checkbox" onchange="wm_selGroup(this)" class="custom-control-input" id="Unspecified">
+                <label class="custom-control-label top2" for="Unspecified" style="vertical-align:sub;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Unspecified</label>
+            </div>
+            <button type="button" id="btn-Unspecified" onclick="edit_group('Unspecified')" class="btn btn-light btn-sm" style="display:none;padding:0 3px;font-size:12px;float:right"><i class="fa fa-sm fa-pencil-alt" aria-hidden="true"></i></button>
+        </a>
+        {% endif %}
+    </div>
+</div>
+{# Register ChatID Modal #}
+<div class="modal fade" id="regi-chatid" tabindex="-1" role="dialog" aria-labelledby="regi-chatid-title" aria-hidden="true">
+    <div class="modal-dialog {# modal-dialog-centered #}" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="regi-chatid-title">Register Chat ID</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" style="font-size:14px"> 
+                <div id="guide-chatid">
+                    <p><b>Please follow the steps below to register your chat ID for notification service.</b> If you haven't already, please sign up Telegram since our notification service is based on Telegram Chat Bot.</p>
+                    <ol>
+                        <li>
+                            Search "Hyunmnb" and add Hyunmnb (@Hyunmnb_bot) on Telegram.<br>
+                            <img width="60%" src="/static/img/Hyunmnb_bot.png">
+                        </li>
+                        <li>Please click "Start" button at the bottom of chat window.</li>
+                        <li>
+                            Then, the bot will send your chat ID. Please enter your chat id below.<br>
+                            <img width="60%" src="/static/img/Hyunmnb_bot3.png">
+                        </li>
+                    </ol>
+                </div>
+                <form id="register-chatid" class="form-inline">
+                    <input type="hidden" name="regi-cid-vrcode" id="regi-cid-vrcode">
+                    <input type="hidden" name="regi-cid-bedname" id="regi-cid-bedname">
+                    <div class="form-group mb-2 mr-2">
+                        <input id="chatid" name="chatid" type="text" class="form-control" placeholder="Chat ID" style="font-size:14px" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary mb-2" style="font-size:14px;">Register</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{# Filter Settings Modal #}
+<div class="modal fade" id="filt-setting" tabindex="-1" role="dialog" aria-labelledby="filt-setting-title" aria-hidden="true">
+    <div class="modal-dialog {# modal-dialog-centered #}" role="document" style="max-width:40rem;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="filt-setting-title">Filter Settings</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="$('#form-filt-setting').trigger('reset')">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="form-filt-setting">
+                <div class="modal-body" style="font-size:14px;">
+                    <input type="hidden" name="job" value="edit_filt">
+                    <input type="hidden" name="filt-setting-bedid" value="">
+                    <input type="hidden" name="filt-setting-bedname" value="">
+                    <div id="filt-bed-list" class="m-2 d-none" style="word-wrap: break-word;">Selected Beds:<br>
+                        <span id="filt-selected-beds"></span>
+                    </div>
+                    <div id="filt-list" class="m-2">
+                        <div style="padding-bottom:4.8px;">Filters</div>
+                        {% for filt in filters %}
+                            <div class="form-check" style="padding-top:4.8px;">
+                                <input type="checkbox" name="filters[]" value="{{filt.modname}}" class="form-check-input">
+                                <label class="form-check-label" for="filters[]">
+                                    {{filt.name}}
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="$('#form-filt-setting').trigger('reset')">Close</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{# Dev Settings Modal #}
+<div class="modal fade" id="dev-setting" tabindex="-1" role="dialog" aria-labelledby="dev-setting-title" aria-hidden="true">
+    <div class="modal-dialog {# modal-dialog-centered #}" role="document" style="max-width:40rem;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="dev-setting-title">Bed Settings</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="form-dev-setting">
+                <div class="modal-body" style="font-size:14px;">
+                    <input type="hidden" name="job" value="edit_dev">
+                    <input type="hidden" name="dev-setting-bedid" value="">
+                    <input type="hidden" name="dev-setting-bedname" value="">
+                    <table class="table table-sm table-no-border mb-1">
+                        <thead><tr>
+                            <th width="20%">Device Type</th>
+                            <th width="20%">Name</th>
+                            <th width="35%">Port</th>
+                            <th width="10%">Y Cable</th>
+                            <th width="15%"></th>
+                        </tr></thead>
+                        <tbody id="dev-list">
+                            <tr class="device-form d-none" id="device-form">
+                                <td><select class="form-control" name="device-type" onchange="get_device_name($('#device-form-1'),$(this).val())" style="font-size:14px;height:35px;">
+                                    <option value="" selected disabled></option>
+                                    {% for dev in devices %}
+                                    <option value="{{dev.type}}">{{dev.type}}</option>
+                                    {% endfor %}
+                                </select></td>
+                                <td><input class="form-control" type="text" name="device-name" style="font-size:14px;"></td>
+                                <td>
+                                    <div class="form-row">
+                                        <div class="col-sm-6">
+                                            <select class="form-control" name="device-port" style="font-size:14px;height:35px;" onchange="add_newport(this)">
+                                                <option value="" selected disabled></option>
+                                                <option value="LU">LU</option>
+                                                <option value="LU1">LU1</option>
+                                                <option value="LU2">LU2</option>
+                                                <option value="LU3">LU3</option>
+                                                <option value="LU4">LU4</option>
+                                                <option value="RU">RU</option>
+                                                <option value="RU1">RU1</option>
+                                                <option value="RU2">RU2</option>
+                                                <option value="RU3">RU3</option>
+                                                <option value="RU4">RU4</option>
+                                                <option value="LL">LL</option>
+                                                <option value="LL1">LL1</option>
+                                                <option value="LL2">LL2</option>
+                                                <option value="LL3">LL3</option>
+                                                <option value="LL4">LL4</option>
+                                                <option value="RL">RL</option>
+                                                <option value="RL1">RL1</option>
+                                                <option value="RL2">RL2</option>
+                                                <option value="RL3">RL3</option>
+                                                <option value="RL4">RL4</option>
+                                                <option value="F1">F1</option>
+                                                <option value="F2">F2</option>
+                                                <option value="F3">F3</option>
+                                                <option value="F4">F4</option>
+                                                <option value="C1">C1</option>
+                                                <option value="C2">C2</option>
+                                                <option value="C3">C3</option>
+                                                <option value="C4">C4</option>
+                                                <option value="COM1">COM1</option>
+                                                <option value="COM2">COM2</option>
+                                                <option value="COM3">COM3</option>
+                                                <option value="COM4">COM4</option>
+                                                <option value="COM5">COM5</option>
+                                                <option value="COM6">COM6</option>
+                                                <option value="COM7">COM7</option>
+                                                <option value="COM8">COM8</option>
+                                                <option value="COM9">COM9</option>
+                                                <option value="COM10">COM10</option>
+                                                <option value="ACM0">ACM0</option>
+                                                <option value="other">Other</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <input type="hidden" value="" name="device-port-other" class="form-control" placeholder="Portname" style="font-size:14px; height:35px;">
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="text-align:center"><input type="checkbox" name="device-ycable" style="vertical-align:-webkit-baseline-middle;"></td>
+                                <td class="dev-btns pl-4">{# <a class="add-device mr-2" style="color:#348ec7;vertical-align:-webkit-baseline-middle" onclick="add_device_form()"><i class="fa fa-lg fa-plus-circle"></i></a> #}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div style="width:20%;padding-right:.3rem;padding-left:.3rem;"><button type="button" class="add-device btn btn-primary btn-lg btn-block" style="height:37px;padding:.3rem 1rem;font-size:15px;text-align:left" onclick="add_device_form()"><i class="fa fa-plus"></i> Add</button></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{# Patient Info Modal #}
+<div class="modal container-addRoom fade" id="ptinfo" tabindex="-1" role="dialog" aria-labelledby="ptinfo-title" aria-hidden="true">
+    <div class="modal-dialog" role="document" style="max-width:25rem;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="ptinfo-title">Patient Information</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="form-ptinfo" class="mb-1">
+                    <input type="hidden" name="job" value="set_ptinfo">
+                    <input type="hidden" name="bedid" id="ptinfo-bedid">
+                    <div class="form-group">
+                        <label for="age">Age</label>
+                        <input id="age" name="age" type="number" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="sex">Sex</label><br>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="sex" id="male" value="1" required>
+                            <label class="form-check-label" for="male">Male</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="sex" id="female" value="0">
+                            <label class="form-check-label" for="female">Female</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="weight">Weight (kg)</label>
+                        <input id="weight" name="weight" type="number" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="height">Height (cm)</label>
+                        <input id="height" name="height" type="number" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block" style="height:38px;">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{# New VR Modal #}
+<div class="modal container-addRoom fade" id="add-vr2" tabindex="-1" role="dialog" aria-labelledby="add-vr2-title" aria-hidden="true">
+    <div class="modal-dialog" role="document" style="max-width:25rem;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="add-vr2-title">Register VR</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="location.reload()">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="add-vr2-msg" class="alert alert-primary d-none" role="alert"></div>
+                <form id="form-add-vr2" class="mb-1">
+                    <div class="form-group">
+                        <label for="vrname2">VR Name</label>
+                        <input id="vrname2" type="text" class="form-control" placeholder="VR name">
+                    </div>
+                    <div class="form-group">
+                        <label for="vrcode2">VR Code</label>
+                        <input id="vrcode2" type="text" class="form-control" placeholder="VR code" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="groupname2">Default Group</label>
+                        <select class='form-control mb-2' id="groupname2" onchange="sel_group(this.value)">
+                            <option value="all" selected>All</option>
+                            {% for group in groups %}
+                            <option value="{{group}}">{{group}}</option>
+                            {% endfor %}
+                            <option value="other">Add group</option>
+                        </select>
+                        <input name="new_group2" id="new_group2" type="hidden" class="form-control" placeholder="Groupname">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block" style="height:38px;">Register</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{# Change Permission Modal #}
+<div class="modal fade" id="edit-permissions" tabindex="-1" role="dialog" aria-labelledby="edit-permissions-title" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="edit-permissions-title">Change Permission (<span id="p-bedname"></span>)</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" style="font-size:14px;">
+                <form id="edit-permission" class="m-1">
+                    <input type="hidden" name="bedname" id="editp-bedname">
+                    <input type="hidden" name="vrcode" id="editp-vrcode">
+                    <input type="hidden" name="job" value="edit_permission">
+                    <table class="mt-1 mb-2 table table-sm table-valign-middle">
+                        <thead>
+                            <th>Name</th>
+                            <th class="text-center" style="width:70px">View</th>
+                            <th class="text-center" style="width:70px">Download</th>
+                            <th class="text-center" style="width:70px">Manage</th>
+                            <th class="text-center" style="width:70px">Own</th>
+                            <th class="text-center" style="width:30px"></th>
+                        </thead>
+                        <tbody id="viewers">
+                        </tbody>
+                    </table>
+                    <div id="editp-alert" class="alert alert-warning p-1 mb-0 d-none" role="alert" style="">You have made changes that you need to save.</div>
+                    <div id="editp-btns" class="mt-2 float-right d-none">
+                        <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                        <button class="btn btn-sm btn-primary" onclick="submit_form('edit-permission', 'edit-permissions')">Done</button>
+                        <button id="reset-editp" class="btn btn-sm btn-light" style="width:65px;">Cancel</button>
+                    </div>
+                    <button type="button" class="close-modal btn btn-sm btn-primary mr-1 float-right" data-dismiss="modal" aria-label="Close">Done</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{# Change Permission Modal #}
+<div class="modal fade" id="share-beds" tabindex="-1" role="dialog" aria-labelledby="share-beds-title" aria-hidden="true">
+    <div class="modal-dialog {# modal-dialog-centered #}" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="share-beds-title">Change Permission</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="$('#share-view').trigger('reset');$('#add-viewer').addClass('d-none');">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <span style="word-wrap: break-word;">Selected VRs:
+                    <p id="selected-beds"></p>
+                </span>
+                <form id="share-view">
+                    <div class="form-group">
+                        Please select permissions to grant:<br>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="m-view" id="m-view" value="1" onchange="toggle_add_viewer()">
+                            <label class="form-check-label" for="m-view">
+                                View
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="m-download" id="m-download" value="2" onchange="toggle_add_viewer()">
+                            <label class="form-check-label" for="m-download">
+                                Download
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="m-manage" id="m-manage" value="4" onchange="toggle_add_viewer()">
+                            <label class="form-check-label" for="m-manage">
+                                Manage
+                            </label>
+                        </div>
+                    </div>
+                    <div id="add-viewer" class="form-group d-none" style="width:100%">
+                        <label for="viewerid">Enter <u>user IDs</u> to share the selected VRs.</label>
+                        <input type="text" class="form-control mr-3" name="viewerid" id="viewerid" placeholder="User IDs separated by comma">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block" style="margin-bottom:5px;">Share</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{# Edit Group Modal #}
+<div class="modal container-addRoom fade" id="edit-group" tabindex="-1" role="dialog" aria-labelledby="edit-group-title" aria-hidden="true">
+    <div class="modal-dialog {# modal-dialog-centered #}" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="edit-group-title">Edit Group Name</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="group-edit">
+                    <input type="hidden" id="prev-groupname">
+                    <div class="form-group" style="margin-bottom: 0.5rem!important;">
+                        <label for="new-groupname">Enter new group name.</label>
+                        <input type="text" class="form-control" id="new-groupname" >
+                    </div>
+                    <button class="btn btn-primary btn-block" style="margin-bottom:5px;">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{# Change Group Modal - move VRs to selected group #}
+<div class="modal container-addRoom fade" id="change-group" tabindex="-1" role="dialog" aria-labelledby="change-group-title" aria-hidden="true">
+    <div class="modal-dialog {# modal-dialog-centered #}" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="change-group-title">Change Group</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="move-vrs">
+                    <p>Choose a group to move selected VRs.</p>
+                    <span style="word-wrap: break-word;">Selected VRs:
+                        <p id="selected-beds2"></p>
+                    </span>
+                    <div class="form-group">
+                        <label for="groupname">Group</label>
+                        <select name="groupname" id="group-name" class="form-control sel-g" onchange="add_newgroup(this,'add-new-group')">
+                            <option selected disabled>Select group...</option>
+                            {% for group in groups %}
+                            <option value="{{group}}">{{group}}</option>
+                            {% endfor %}
+                            <option style="color:#0000ff;" value="add">Add Group</option>
+                        </select>
+                    </div>
+                    <div class="form-group d-none" id="add-new-group">
+                        <label for="new-group">Enter a new group name</label>
+                        <input type="text" class="form-control" name="new-group" id="new-group-name">
+                    </div>
+                    <button id="move-btn" class="btn btn-primary btn-block" type="submit" style="float:right;" disabled>Change</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{# Change Group Modal - move shared VR to selected group #}
+<div class="modal container-addRoom fade" id="cg-shared" tabindex="-1" role="dialog" aria-labelledby="cg-shared-title" aria-hidden="true">
+    <div class="modal-dialog {# modal-dialog-centered #}" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cg-shared-title">Change Group (<span id="cg-bedname"></span>)</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="cg-shared-vr">
+                    <input type="hidden" id="cg-shared-bedname">
+                    <input type="hidden" id="cg-shared-owner">
+                    <div class="form-group">
+                        <label for="groupname">Group</label>
+                        <select name="groupname" id="cg-groupname" class="form-control sel-g" onchange="add_newgroup(this,'cg-add-group')">
+                            <option selected disabled>Select group...</option>
+                            {% for group in groups %}
+                            <option value="{{group}}">{{group}}</option>
+                            {% endfor %}>
+                            <option style="color:#0000ff;" value="add">Add Group</option>
+                        </select>
+                    </div>
+                    <div class="form-group d-none" id="cg-add-group">
+                        <label for="new-group">Enter a new group name</label>
+                        <input type="text" class="form-control" name="new-group" id="cg-new-group">
+                    </div>
+                    <button id="cg-move-btn" class="btn btn-primary btn-block" type="submit" style="float:right;" disabled>Change</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{# Add Event Modal #}
+<div class="modal fade" id="add-event" tabindex="-1" role="dialog" aria-labelledby="add-event-title" aria-hidden="true" style="z-index:2000">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="add-event-title">Add Event</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="add-evt">
+                    <input type="hidden" id="add-evt-dt">
+                    <input type="hidden" id="add-evt-userid">
+                    <input type="hidden" id="add-evt-bedname">
+                    <input type="hidden" id="add-evt-vrcode">
+                    <div class="form-group" style="margin-bottom: 0.5rem!important;">
+                        <label for="evt">Please enter an event message.</label>
+                        <input type="text" class="form-control" id="evt">
+                    </div>
+                    <button class="btn btn-primary btn-block" style="margin-bottom:5px;">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script src='/socket.io/socket.io.js'></script>
+<div class="d-none">
+    <img id="img-device-on" src="/static/img/web-monitoring/dev-on2.png">
+    <img id="img-device-off" src="/static/img/web-monitoring/dev-off2.png">
+    <img id="img-device-con" src="/static/img/web-monitoring/dev-con2.png">
+    <img id="img-top-patient" src="/static/img/web-monitoring/top-patient.png">
+    <img id="img-offline" src="/static/img/discon.svg">
+    <img id="img-Hyunmnb-logo" src="/static/img/logo-white.png">
+    <div id="wm-member">{{ is_member }}</div>
+    <div id="wm-prevent-del">{{ prevent_del }}</div>
+    <div id="wm-is-demo">{{ is_demo }}</div>
+    <div id="wm-now">{{ now }}</div>
+    <input type="hidden" value="{{latest_version}}" id="vver_latest">
+</div>
+
+{% if rooms|length > 0 %}
+    {% if is_member %}
+        <div class="page-footer fixed-bottom bg-dark py-1 text-center text-light" style="display: none; font-size: .875rem;">
+            * Remote monitoring is intended for data verification and review. It should not be used for clinical purpose.<br>
+        </div>
+    {% else %}
+        <div class="bd-callout bd-callout-warning mt-1 mb-2">
+            Please <a href="/login?next={{ SERVER.REQUEST_URI|url_encode }}">log in</a> to use the features of remote monitoring.
+        </div>
+    {% endif %}
+{% endif %}
+
+<div class="wm-layout wm-filter btn-toolbar" id="toolbar" role="toolbar" style="position:sticky; top:92px;background-color: white; z-index:10;">
+    {% if is_member and (vr_cnt > 0 or rooms|length > 0) %}
+        <button id="group-filter-btn" type="button" class="btn btn-light btn-sm mr-1" onclick="openGFTab();" style="height:30px;">
+            <i class="fa fa-filter" aria-hidden="true"></i> Group
+        </button>
+        <button id="add-vr-btn" type="button" class="btn btn-light btn-sm mr-1" onclick="openTab();" style="height:30px;">
+            <i class="fa fa-cog" aria-hidden="true"></i> VR
+        </button>
+       <button id="wm-noti-btn" type="button" class="btn btn-primary btn-sm mr-1" title="Turn on/off warning messages on monitor" style="height:30px;width:32px;" onclick="wm_notiOn(this)">
+            <i class="fas fa-bell" aria-hidden="true"></i>
+        </button>
+        <button id="wm-ptlabel" type="button" class="btn btn-light btn-sm mr-1" style="height:30px;width:32px;" onclick="wm_patientOn(this)">
+            <i class="fa fa-male" style="font-size:1.2em" aria-hidden="true"></i>
+        </button>
+        <button id="wm-offline" type="button" class="btn btn-light btn-sm mr-1" title="Filter offline monitors" style="height:30px;width:32px;padding:0" onclick="wm_offlineOn(this)">
+            <img id="no-wifi" src='/static/img/discon.svg' style="width:22px;">
+        </button>
+        <div class="alert alert-info" role="alert" id="alert-copy" style="border:none;margin-bottom:0;padding: .35rem .5rem;font-size:14px;height:30px;display:none;">Copied</div>
+        <span id="rt-clock" class="mr-auto ml-auto"></span>
+        <span style="font-size:14px;margin-top:8px" id="room-status"></span>
+        <div class="form-group-sm mr-1 ml-1" role="group" style="display:flex;">
+            <select name="sel-col" class="form-control sel-col">
+                {% set cols = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] %}
+                {% for col in cols %}
+                    <option value={{col}}>{{ col }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="btn-group mr-1" role="group">
+            <button type="button" class="btn btn-light btn-sm" id="wm-refresh" onclick="location.reload()" style="height:30px">
+                <i class="fa fa-redo-alt" aria-hidden="true"></i>
+            </button>
+        </div>
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-light btn-sm" id="wm-expand"  onclick="wm_expandWindow()" style="height:30px;">
+                <i class="fa fa-expand-alt" aria-hidden="true"></i>
+            </button>
+        </div>
+    {% endif %}
+    {% if is_member == false %} 
+        <div id="sel-col" class="form-group-sm ml-auto mb-2" role="group" style="display:flex;">
+            <select name="sel-col" class="form-control sel-col">
+                {% set cols = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] %}
+                {% for col in cols %}
+                    <option value={{col}}>{{ col }}</option>
+                {% endfor %}
+            </select>
+            <button type="button" class="btn btn-light btn-sm" id="wm-expand"  onclick="wm_expandWindow()" style="height:30px;">
+                <i class="fa fa-expand-alt" aria-hidden="true"></i>
+            </button>
+        </div>
+    {% endif %}
+    </div>
+    {% if rooms|length > 0 %}
+    <div id="wm-rooms" class="wm-rooms">
+        {% set prevFirstLetter = '_' %}
+        {% for room in rooms %}<div class="wm-room" {% if "sample" in room.bedid %} style="background-color:black; display:inline-block;border:none;padding:10px;" {% endif %} id="{{ room.bedid }}" {% if userid == room.userid %} title="{{room.bedname}}({{room.vrcode}})" vrcode="{{room.vrcode}}"{% endif %} name="{{ room.bedname }}" group="{{ room.groupname }}" dt="{{ room.dt }}" shareid="{{ room.shareid }}" websocket="{{ room.is_websocket }}" latency="{{ room.display_latency }}">
+                {% if userid == room.userid %}
+                <div class="dropdown-menu context-menu" id="context-menu" style="width:11rem;color:#868e96;font-size:14px;">
+                    {# <a class="dropdown-item" onclick="event.stopPropagation();copy_to_clipboard('{{room.vrcode}}');$(this).parent().removeClass('show').hide();"><div style="display:inline-block;width:10px;text-align:center"><i class="far fa-copy"></i></div>&nbsp; Copy VR Code</a> #}
+                    <a class="dropdown-item" onclick="event.stopPropagation();render_dev_settings_form('{{room.bedid}}','{{room.bedname}}');$(this).parent().removeClass('show').hide();"><div style="display:inline-block;width:10px;text-align:center"><i class="fas fa-sm fa-laptop-medical"></i></div>&nbsp; Device Settings</a>
+                    <a class="dropdown-item" onclick="event.stopPropagation();render_filt_settings_form('{{room.bedid}}','{{room.bedname}}');$(this).parent().removeClass('show').hide();"><div style="display:inline-block;width:10px;text-align:center"><img src="/static/img/function.png" width="13" style="vertical-align:middle;filter:invert(52%)"></div>&nbsp; Filter Settings</a>
+                    {# <a class="dropdown-item" onclick="event.stopPropagation();render_ptinfo_form('{{room.bedid}}','{{room.bedname}}');$(this).parent().removeClass('show').hide();"><div style="display:inline-block;width:10px;text-align:center"><i class="fas fa-stethoscope"></i></div>&nbsp; Patient Information</a> #}
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="/my-files?bedname={{room.bedname}}" target="_blank" onclick="event.stopPropagation();$(this).parent().removeClass('show').hide();" style="color:rgb(134, 142, 150)"><div style="display:inline-block;width:10px;text-align:center"><i class="fas fa-search"></i></div>&nbsp; My Files</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" onclick="event.stopPropagation();edit_permissions('{{room.bedname}}','{{room.vrcode}}')"><div style="display:inline-block;width:10px;text-align:center"><i class="fa fa-sm fa-user-plus"></i></div>&nbsp; Change Permission</a>
+                    <a class="dropdown-item" id="update-vr-{{room.shareid}}" onclick="event.stopPropagation();update_vr('{{room.userid}}','{{room.bedname}}', '{{room.shareid}}', true);$(this).parent().removeClass('show').hide();"><div style="display:inline-block;width:10px;text-align:center"><img src="/static/img/update_vr.png" width="12" style="vertical-align:middle;"></div>&nbsp; Upgrade VR</a>
+                    <a class="dropdown-item remove-bed" onclick="event.stopPropagation();del_bed_by_cmd('{{room.vrcode}}', '{{room.bedid}}', '{{room.bedname}}');$(this).parent().removeClass('show').hide();"><div style="display:inline-block;width:10px;text-align:center"><i class="fa fa-sm fa-times"></i></div>&nbsp; Delete Bed</a> 
+                    {# <a class="dropdown-item" onclick="event.stopPropagation();del_bed('{{room.bedname}}');$(this).parent().removeClass('show').hide();"><div style="display:inline-block;width:10px;text-align:center"><i class="far fa-trash-alt"></i></div>&nbsp; Unregister VR</a> #}
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" id="restart-vr-{{room.shareid}}" onclick="event.stopPropagation();restart_vr('{{room.shareid}}','{{room.bedname}}','{{room.bedid}}',true);$(this).parent().removeClass('show').hide();"><div style="display:inline-block;width:10px;text-align:center"><i class="fa fa-sm fa-sync-alt"></i></div>&nbsp; Restart VR</a>
+                    <a class="dropdown-item" id="reboot-vr-{{room.shareid}}" onclick="event.stopPropagation();reboot_vr('{{room.shareid}}','{{room.bedname}}','{{room.bedid}}',true);$(this).parent().removeClass('show').hide();"><div style="display:inline-block;width:10px;text-align:center"><i class="fa fa-sm fa-power-off"></i></div>&nbsp; Reboot</a>
+                    {# <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" id="set-alarm-{{room.shareid}}" onclick="event.stopPropagation();get_chatid('{{userid}}','{{room.vrcode}}','{{room.bedname}}');$(this).parent().removeClass('show').hide();"><div style="display:inline-block;width:10px;text-align:center"><i class="fas fa-sm fa-bell"></i></div>&nbsp; Alarm Settings</a> #}
+                </div>
+                 <div class="wm-info d-none" style="text-align:right;position:absolute;right:5px;top:5px;z-index:3;">
+                    <button type="button" class="btn btn-dark" id="add-evt-{{room.shareid}}" onclick="add_event('{{room.userid}}','{{room.bedname}}','{{room.bedid}}');" style="opacity:.8;font-size:14px;vertical-align:middle;">
+                        <i class="fa fa-plus" aria-hidden="true" style="color:#4294C6"></i> Add Event
+                    </button>
+                    <div id="exit-{{room.bedid}}" class="d-none ml-2" style="vertical-align:middle">
+                        <a onclick="wm_onClickRoom('{{room.bedid}}');" style="color:white;" title="Press ESC to exit the fullscreen"><i class="fa fa-2x fa-compress" style="background-color:rgba(1,0,0,0)"></i></a>
+                    </div>
+                    <span class="text-secondary" id="update-stat-{{room.shareid}}"></span>
+                </div>
+                {% elseif room.is_manager %}
+                <div class="dropdown-menu context-menu" id="context-menu" style="width:11rem;color:#868e96;font-size:14px;">
+                    <a class="dropdown-item" id="update-vr-{{room.shareid}}" onclick="event.stopPropagation();update_vr('{{room.userid}}','{{room.bedname}}', true);$(this).parent().removeClass('show').hide();"><img src="/static/img/update_vr.png" width="12" style="vertical-align:middle;">&nbsp; Upgrade VR</a>
+                    <a class="dropdown-item" onclick="event.stopPropagation();render_dev_settings_form('{{room.bedid}}','{{room.bedname}}');$(this).parent().removeClass('show').hide();"><div style="display:inline-block;width:10px;text-align:center"><i class="fas fa-sm fa-laptop-medical"></i></div>&nbsp; Device Settings</a>
+                    <a class="dropdown-item" onclick="event.stopPropagation();del_bed('{{room.bedname}}', null, true);$(this).parent().removeClass('show').hide();"><div style="display:inline-block;width:10px;text-align:center"><i class="far fa-trash-alt"></i></div>&nbsp; Unregister VR</a>
+                </div>
+                <div class="wm-info">
+                    <div id="exit-{{room.bedid}}" class="d-none mt-2 mr-2">
+                        <a onclick="wm_onClickRoom('{{room.bedid}}');" style="color:white;" title="Press ESC to exit the fullscreen"><i class="fa fa-2x fa-compress" style="background-color:rgba(1,0,0,0)"></i></a>
+                    </div>
+                    <span class="text-secondary" id="update-stat-{{room.shareid}}"></span>
+                </div>
+                {% else %}
+                <div class="wm-viewer-menu d-none" style="text-align:right;position:absolute;right:5px;top:5px;z-index:3;">
+                    <a class="mr-1" onclick="move_bed('{{room.groupname}}', '{{room.bedname}}', '{{room.userid}}');" style="color:white;font-size:14px;vertical-align:text-top;"><i class="fas fa-sm fa-pencil-alt"></i></a>
+                    {% if prevent_del == 0 %}<a id="del-bed-{{room.bedid}}" onclick="del_bed('{{room.bedname}}', null, true);" style="color:white;"><i class="fa fa-times"></i></a>{% endif %}
+                    <div id="exit-{{room.bedid}}" class="d-none mt-2 mr-2"><a onclick="wm_onClickRoom('{{room.bedid}}');" style="color:white;" title="Press ESC to exit the fullscreen"><i class="fa fa-2x fa-compress"></i></a></div>
+                </div>
+                {% endif %}
+                <canvas width="800" height="705" style="touch-action:manipulate;">Your web browser does not support HTML5 Canvas.</canvas>
+                <div class="wm-control" style="position:absolute;z-index:3;bottom:0px;left:0px;">
+                    <div class="row">
+                        <div class="col-12 wm-slider">
+                            <input type="range" min="-14400" max="0" value="0">
+                        </div>
+                    </div>
+                    <div class="row" style="margin: 0 0 7px 5px;">
+                        <button type="button" class="btn btn-transparent wm-first" title="Go back to the beginning of the case" disabled>
+                            <i class="fa fa-fast-backward" aria-hidden="true"></i>
+                        </button>
+                        &nbsp;
+                        <button type="button" class="btn btn-transparent wm-prev" title="Rewind 7 secs">
+                            <i class="fa fa-step-backward" aria-hidden="true"></i>
+                        </button>
+                        &nbsp;
+                        <button type="button" class="btn btn-transparent wm-pause">
+                            <i class="fa fa-pause" aria-hidden="true"></i>
+                        </button>
+                        <button type="button" class="btn btn-transparent wm-resume" style="display: none;">
+                            <i class="fa fa-play" aria-hidden="true"></i>
+                        </button>
+                        &nbsp;
+                        <button type="button" class="btn btn-transparent wm-next" title="Proceed 7 secs">
+                            <i class="fa fa-step-forward" aria-hidden="true"></i>
+                        </button>
+                        &nbsp;
+                        <button type="button" class="btn btn-transparent wm-last" title="Go back to real time monitoring" disabled>
+                            <i class="fa fa-fast-forward" aria-hidden="true"></i>
+                        </button>
+                        &nbsp;
+                        <label for="play-speed" class="d-inline-block" style="color:white;margin:0;padding: 10px 15px;">Play Speed</label>
+                        <select class="form-control form-control-sm sel-dark d-inline-block play-speed" id="play-speed" onchange="setPlaySpeed(this.value)" style="width:100px; margin:3px 5px;">
+                            <option value="1">x1</option>
+                            <option value="2">x2</option>
+                            <option value="4">x4</option>
+                            <option value="6">x6</option>
+                        </select>
+                        <span class="wm-time" style="margin:8px 0 0 15px;"></span>
+                        <span class="wm-timeX" style="margin:8px 0 0 15px;"></span>
+                    </div>
+                </div>
+            </div>{% endfor %}
+        </div>
+        <div class="text-muted mt-2 pl-2" style="font-size: .875rem;">
+            * Remote monitoring is intended for data verification and review. It should not be used for clinical purpose.<br>
+        </div>
+{% endif %}
+{% if rooms|length <= 0 and vr_cnt <= 0 and is_member %}
+    <div id="first_vr" class="alert alert-primary text-center mt-2" role="alert" style="font-size:17px">
+        To get started with Web Monitoring, first set up VitalRecorder for your PC, and then register VR code here.
+    </div>
+    <div class="row" style="margin:0">
+        <div class="col-6">
+            <div class="ml-auto mt-2" style="position:relative;text-align:center;margin-right:4rem;border:2.5px solid #348ec7;width:360px;height:360px;border-radius:50%;">
+                <div class="font-weight-light" style="position:absolute;top:0;text-align:center;color:white;font-size:23px;background-color:#348ec7;width:60px;line-height:60px;border-radius:50%;">1</div>
+                <img src="/static/img/demo.png" style="height:195px;position:absolute;top:42px;left:21%;">
+                <div style="position:absolute;top:250px;left:14.5%;width:260px;">
+                    <a href="/getvr.php?type=exe">Install VitalRecorder</a> to record and analyze vital signs on your Windows PC
+                </div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="mr-auto mt-2" style="position:relative;text-align:center;margin-left:4rem;border:2.5px solid #348ec7;width:360px;height:360px;border-radius:50%;">
+                <div class="font-weight-light" style="position:absolute;top:0;text-align:center;color:white;font-size:23px;background-color:#348ec7;width:60px;line-height:60px;border-radius:50%;">2</div>
+                <img src="/static/img/settings.jpg" style="height:165px;position:absolute;top:65px;left:14.5%;">
+                <div style="position:absolute;top:242px;left:14.5%;width:249px;">
+                    Copy VR Code from VitalRecorder Settings and <a href="#" onclick="$('#add-vr2').modal('show');">register here</a> to enable remote<br>monitoring
+                </div>
+            </div>
+        </div>
+    </div>
+    <button onclick="$('#add-vr2').modal('show');" class="btn btn-lg btn-primary d-block ml-auto mr-auto mb-2 font-weight-light" style="width:241px;font-size:17px;">Register VR Code</button>
+    <a href="/web-monitoring?query=guide" target="_blank" class="btn btn-lg btn-light d-block ml-auto mr-auto font-weight-light" style="width:241px;font-size:17px;"><i class="fa fa-book text-secondary"></i> Getting Started Guide</a>
+{% endif %}
+{% endblock %}
+
+{% block js %}
+{{ parent() }}
+<script src="/static/vendor/jQuery-BinaryTransport/jquery.binarytransport.js?v={{ static_v }}"></script>
+<script src="/static/vendor/pako/pako.js?v={{ static_v }}"></script>
+<script src="/static/js/wm-common.min.js?v={{ static_v }}"></script>
+<script src="/static/js/web-monitoring.min.js?v={{ static_v }}"></script>
+<script src="/static/js/bootstrap.min.js"></script>
+{% endblock %}

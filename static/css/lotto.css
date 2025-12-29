@@ -1,0 +1,49 @@
+.lotto {
+    display: inline-block;
+    text-align: center;
+    vertical-align: middle;
+    color: #ffffff;
+    text-shadow: 0px 0px 3px rgba(73, 57, 0, .8);
+    margin-right: 10px;
+    margin-top: 10px;
+}   
+
+.one {
+    width: 40px;
+    height: 40px;
+    font-size: 28px;
+    border-radius: 100%;
+    background-color: #FFE9A0;
+}
+  
+.ten {
+    width: 40px;
+    height: 40px;
+    font-size: 28px;
+    border-radius: 100%;
+    background-color: blue;
+}
+  
+.twenty {
+    width: 40px;
+    height: 40px;
+    font-size: 28px;
+    border-radius: 100%;
+    background-color: red;
+}
+
+.thirty {
+    width: 40px;
+    height: 40px;
+    font-size: 28px;
+    border-radius: 100%;
+    background-color: gray;
+}
+  
+.fourty {
+    width: 40px;
+    height: 40px;
+    font-size: 28px;
+    border-radius: 100%;
+    background-color: green;
+}

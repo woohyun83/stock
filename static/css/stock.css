@@ -1,0 +1,103 @@
+/* Styles for the stock date selector rendered in stock/views/stock.pug */
+#stock_date{
+	display:flex;
+	flex-wrap:wrap;
+	justify-content:flex-end;
+	gap:8px;
+	margin-bottom:8px;
+}
+#stock_date .date{
+	cursor:pointer;
+	padding:4px 8px;
+	border-radius:4px;
+	border:1px solid #ddd;
+	background:#f8f9fa;
+}
+#stock_date .date.selected{
+	background:#007bff;
+	color:#fff;
+	border-color:#007bff;
+}
+
+/* small adjustments for date controls area */
+.row.mt-3 .d-flex .btn{ margin-right:8px; }
+
+/* Chart responsiveness */
+.chart-container{
+	width:100%;
+	max-width:100%;
+	overflow:hidden;
+}
+.chart-container canvas{ width:100% !important; height:auto !important; }
+
+/* Chart title bar: pin prev/next buttons to left/right and center the title */
+.chart-title-bar{
+	position:relative;
+	padding:1.25rem 1rem;
+}
+.chart-title-bar button#chartPrevBtn,
+.chart-title-bar button#chartNextBtn{
+	position:absolute;
+	top:50%;
+	transform:translateY(-50%);
+	z-index:2;
+}
+.chart-title-bar button#chartPrevBtn{ right:2.8rem; }
+.chart-title-bar button#chartNextBtn{ right:0.5rem; }
+.chart-title-bar #chartTitle{
+	position:relative;
+	width:auto;
+	max-width:calc(100%);
+	margin:0 auto;
+	text-align:center;
+	cursor:pointer;
+	white-space:nowrap;
+	overflow:hidden;
+	text-overflow:ellipsis;
+	padding:0 10px;
+	font-weight:500;
+	user-select:none;
+}
+	z-index:1; /* below buttons visually, but centered */
+	pointer-events:none; /* allow clicks to pass to buttons if overlapping */
+}
+
+/* hide chart by default; add .visible to show */
+.chart-container{ display:none; opacity:0; transform: translateY(-8px); transition: opacity 300ms ease, transform 300ms ease; }
+.chart-container.visible{ display:block; opacity:1; transform: translateY(0); }
+
+/* hide table by default and animate */
+.table-responsive{ opacity:0; transform: translateY(-8px); transition: opacity 300ms ease, transform 300ms ease; display:block; }
+.table-responsive.visible{ opacity:1; transform: translateY(0); }
+
+/* Table responsiveness tweaks */
+.table-responsive{
+	width:100%;
+	overflow-x:auto; /* allow horizontal scrolling when table is wider than container */
+	-webkit-overflow-scrolling: touch;
+	padding-bottom:0.5rem; /* ensure last row isn't cut off */
+}
+.table-responsive table{ font-size:80%; } /* globally reduce table font size to 80% */
+.table-responsive table td, .table-responsive table th{ white-space:nowrap; }
+
+/* Industry wrapper specific behavior: collapsed shows ~1 row, expanded shows ~7 rows with vertical scroll */
+#indutryWrapper{ max-height: none; overflow-y: visible; }
+#indutryWrapper.collapsed{ max-height: 100px; overflow-y: auto; }
+#indutryWrapper.expanded{ max-height: 311px; overflow-y: auto; }
+#indutryWrapper::-webkit-scrollbar, #indutryWrapper.collapsed::-webkit-scrollbar, #indutryWrapper.expanded::-webkit-scrollbar{ width:8px; }
+#indutryWrapper::-webkit-scrollbar-thumb{ background: rgba(0,0,0,0.12); border-radius:4px; }
+#indutryWrapper table{ margin-bottom:0; }
+
+/* highlight selected table row when a stock is clicked */
+.selected-row{ background: linear-gradient(90deg, rgba(0,123,255,0.08), rgba(0,123,255,0.02)); }
+.selected-row td{ background: transparent; }
+
+/* Mobile adjustments */
+@media (max-width: 768px){
+	#stock_date{ justify-content:flex-start; }
+	#stock_date .date{ padding:6px 10px; font-size:0.9rem; }
+	.chart-container canvas{ height:200px !important; }
+	.table-responsive table td, .table-responsive table th{ white-space:normal; font-size:0.9rem; padding:6px; }
+}
+
+#toggleIndustryBtn { margin-left: 20px; }

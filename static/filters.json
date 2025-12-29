@@ -1,0 +1,14 @@
+[
+    {
+        "modname": "filters.abp_ppv",
+        "name": "Pulse Pressure Variation"
+    },
+    {
+        "modname": "filters.ecg_hrv",
+        "name": "Heart Rate Variability"
+    },
+    {
+        "modname": "filters.eeg_fft",
+        "name": "Frequency Analysis"
+    }
+]
